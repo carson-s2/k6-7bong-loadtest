@@ -1,10 +1,10 @@
 import http from 'k6/http';
 import { check, sleep, fail } from 'k6';
-import exec from 'k6/execution'; // Cập nhật đúng module k6/execution
+import exec from 'k6/execution';
 import { CONFIG } from './7bongConfig.js';
 
 // 1. LẤY CẤU HÌNH TỪ TERMINAL
-// Lệnh chạy mẫu: k6 run -e ENV=server -e DOMAIN=quehuongtoi.com -e SERVER_IP=http://11.111.222.33 -e MAX_VUS=1 7bongLoadTest.js
+// Lệnh chạy mẫu: k6 run -e ENV=server -e DOMAIN={DOMAIN} -e SERVER_IP=http://{SERVER_IP} -e MAX_VUS=1 7bongLoadTest.js
 const MAX_VUS = __ENV.MAX_VUS ? parseInt(__ENV.MAX_VUS) : CONFIG.MAX_VUS;
 const RUN_MODE = __ENV.ENV; 
 
@@ -52,21 +52,19 @@ function generateConfig() {
                 tags: { page_name: pageKey },
             };
             
-            // Cập nhật startTime cho trang kế tiếp
-            // Tổng cộng: 120s + 420s + 60s = 600s (10 phút)
             totalStartTime += (RAMP_UP_TIME + STAY_TIME + RAMP_DOWN_TIME + BREAK_TIME);
         }
 
         // --- THRESHOLDS ---
         thresholds[`http_req_duration{page_name:${pageKey}}`] = [{ 
-            threshold: 'p(95)<10000', // Tăng ngưỡng lên 10s
-            abortOnFail: false,       // Không dừng bài test ngang xương khi vi phạm
+            threshold: 'p(95)<10000',
+            abortOnFail: false,
             delayAbortEval: '20s'
         }];
 
         thresholds[`http_req_failed{page_name:${pageKey}}`] = [{ 
             threshold: 'rate<0.05',  
-            abortOnFail: false,       // Không dừng bài test ngang xương khi vi phạm
+            abortOnFail: false,
             delayAbortEval: '20s' 
         }];
 
@@ -80,9 +78,7 @@ const config = generateConfig();
 export const options = {
     scenarios: config.scenarios,
     thresholds: config.thresholds,
-    // QUAN TRỌNG: Không tải body về để tránh nghẽn băng thông và tốn RAM máy test
     discardResponseBodies: true,
-    // BỎ QUA KIỂM TRA CHỨNG CHỈ SSL (Tránh lỗi Status 0 khi chạy HTTPS)
     insecureSkipTLSVerify: true,
 };
 
@@ -99,13 +95,13 @@ export default function () {
     let currentBaseUrl = finalBaseUrl;
     let currentHostHeader = hostHeader;
 
-    // Nếu là trang tructiep, ép dùng Domain (https://quehuongtoi.com)
+    // Nếu là trang tructiep, ép dùng Domain thay vì Server IP
     if (TARGET_PAGE_KEY === 'tructiep') {
         currentBaseUrl = CONFIG.BASE_URL || `https://${CONFIG.DOMAIN}`;
         currentHostHeader = null; // Bỏ Host header vì đã dùng URL Domain chuẩn
     }
 
-    // Chuẩn hóa ghép URL an toàn (tránh bị thừa/thiếu dấu /)
+    // Chuẩn hóa ghép URL an toàn
     const cleanBaseUrl = currentBaseUrl.replace(/\/+$/, '');
     const cleanPath = rawPath.startsWith('/') ? rawPath : `/${rawPath}`;
     const finalUrl = `${cleanBaseUrl}${cleanPath}`;
@@ -128,9 +124,9 @@ export default function () {
             'Sec-Fetch-Mode': 'navigate',
             'Sec-Fetch-Site': 'same-origin',
             
-            // 3. Giả lập Referer & Origin chính chủ
-            'Referer': CONFIG.DOMAIN ? `https://${CONFIG.DOMAIN}/` : 'https://quehuongtoi.com/',
-            'Origin': CONFIG.DOMAIN ? `https://${CONFIG.DOMAIN}` : 'https://quehuongtoi.com',
+            // 3. Tự động lấy chính URL/Domain đang test làm Referer & Origin
+            'Referer': `${cleanBaseUrl}/`,
+            'Origin': cleanBaseUrl,
         },
         tags: { page_name: TARGET_PAGE_KEY },
         timeout: '30s',
