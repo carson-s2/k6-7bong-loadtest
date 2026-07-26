@@ -60,13 +60,13 @@ function generateConfig() {
         // --- THRESHOLDS  ---
         thresholds[`http_req_duration{page_name:${pageKey}}`] = [{ 
             threshold: 'p(95)<10000', // Tăng ngưỡng lên 10s (hoặc chỉnh tùy nhu cầu)
-            abortOnFail: true,       // Đổi thành false để k6 KHÔNG dừng ngang khi bị vi phạm
+            abortOnFail: false,  //Đổi thành false để K6 ko dừng ngang khi vi phạm     
             delayAbortEval: '20s'
         }];
 
         thresholds[`http_req_failed{page_name:${pageKey}}`] = [{ 
             threshold: 'rate<0.05',  
-            abortOnFail: true,       // // Đổi thành false để k6 KHÔNG dừng ngang khi bị vi phạm
+            abortOnFail: false,  //Đổi thành false để K6 ko dừng ngang khi vi phạm     
             delayAbortEval: '20s' 
         }];
 
@@ -87,15 +87,24 @@ export const options = {
 export default function () {
     const scenarioName = execution.scenario.name;
     const TARGET_PAGE_KEY = scenarioName.replace('scenario_', '');
-    const path = CONFIG.PAGES[TARGET_PAGE_KEY];
+    const rawPath = CONFIG.PAGES[TARGET_PAGE_KEY];
 
-    if (!path) fail(`❌ LỖI: Không tìm thấy path cho "${TARGET_PAGE_KEY}"`);
+    if (!rawPath && rawPath !== '') fail(`❌ LỖI: Không tìm thấy path cho "${TARGET_PAGE_KEY}"`);
 
-    // ĐÃ REMOVE RANDOM QUERY PARAMS để tận dụng Cache của Server (mô phỏng người dùng thật)
-     const finalUrl = `${finalBaseUrl}${path}`;
+    // Chuẩn hóa ghép URL an toàn (tránh bị thừa/thiếu dấu /)
+    const cleanBaseUrl = finalBaseUrl.replace(/\/+$/, '');
+    const cleanPath = rawPath.startsWith('/') ? rawPath : `/${rawPath}`;
+    const finalUrl = `${cleanBaseUrl}${cleanPath}`;
      
     const params = {
-        headers: { 'User-Agent': 'K6-Performance-Test/1.0', 'Connection': 'keep-alive' },
+        headers: { 
+            // Giả lập User-Agent trình duyệt thật để vượt qua WAF Cloudflare
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+            'Accept-Language': 'vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive' 
+        },
         tags: { page_name: TARGET_PAGE_KEY },
         timeout: '30s',
     };
@@ -107,6 +116,7 @@ export default function () {
         console.log(`\n================================================`);
         console.log(`🎬 CHẾ ĐỘ: ${MAX_VUS <= 10 ? 'SMOKE TEST' : 'LOAD TEST'}`);
         console.log(`🚀 ĐANG TEST: ${TARGET_PAGE_KEY.toUpperCase()} | TARGET: ${MAX_VUS} CCU`);
+        console.log(`🔗 TARGET URL: ${finalUrl}`);
         console.log(`================================================`);
     }
 
@@ -121,6 +131,6 @@ export default function () {
     check(res, { 'status is 200': (r) => r.status === 200 });
 
     if (res.status !== 200) {
-        console.error(`[FAIL] Trang: ${TARGET_PAGE_KEY} | Status: ${res.status} | CCU: ${execution.instance.vusActive}`);
+        console.error(`[FAIL] Trang: ${TARGET_PAGE_KEY} | Status: ${res.status} | CCU: ${execution.instance.vusActive} | URL: ${finalUrl}`);
     }
 }
