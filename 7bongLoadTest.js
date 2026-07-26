@@ -1,10 +1,10 @@
 import http from 'k6/http';
 import { check, sleep, fail } from 'k6';
-import execution from 'k6/execution';
+import exec from 'k6/execution'; // Cập nhật đúng module k6/execution
 import { CONFIG } from './7bongConfig.js';
 
 // 1. LẤY CẤU HÌNH TỪ TERMINAL
-// Lệnh chạy mẫu: k6 run -e MAX_VUS=100 script.js
+// Lệnh chạy mẫu: k6 run -e ENV=server -e DOMAIN=quehuongtoi.com -e SERVER_IP=http://11.111.222.33 -e MAX_VUS=1 7bongLoadTest.js
 const MAX_VUS = __ENV.MAX_VUS ? parseInt(__ENV.MAX_VUS) : CONFIG.MAX_VUS;
 const RUN_MODE = __ENV.ENV; 
 
@@ -57,16 +57,16 @@ function generateConfig() {
             totalStartTime += (RAMP_UP_TIME + STAY_TIME + RAMP_DOWN_TIME + BREAK_TIME);
         }
 
-        // --- THRESHOLDS  ---
+        // --- THRESHOLDS ---
         thresholds[`http_req_duration{page_name:${pageKey}}`] = [{ 
-            threshold: 'p(95)<10000', // Tăng ngưỡng lên 10s (hoặc chỉnh tùy nhu cầu)
-            abortOnFail: false,  //Đổi thành false để K6 ko dừng ngang khi vi phạm     
+            threshold: 'p(95)<10000', // Tăng ngưỡng lên 10s
+            abortOnFail: false,       // Không dừng bài test ngang xương khi vi phạm
             delayAbortEval: '20s'
         }];
 
         thresholds[`http_req_failed{page_name:${pageKey}}`] = [{ 
             threshold: 'rate<0.05',  
-            abortOnFail: false,  //Đổi thành false để K6 ko dừng ngang khi vi phạm     
+            abortOnFail: false,       // Không dừng bài test ngang xương khi vi phạm
             delayAbortEval: '20s' 
         }];
 
@@ -82,25 +82,37 @@ export const options = {
     thresholds: config.thresholds,
     // QUAN TRỌNG: Không tải body về để tránh nghẽn băng thông và tốn RAM máy test
     discardResponseBodies: true,
-    // BỎ QUA KIỂM TRA CHỨNG CHỈ SSL (Sửa lỗi Status: 0 khi chạy HTTPS tới IP)
+    // BỎ QUA KIỂM TRA CHỨNG CHỈ SSL (Tránh lỗi Status 0 khi chạy HTTPS)
     insecureSkipTLSVerify: true,
 };
 
 export default function () {
-    const scenarioName = execution.scenario.name;
+    const scenarioName = exec.scenario.name;
     const TARGET_PAGE_KEY = scenarioName.replace('scenario_', '');
     const rawPath = CONFIG.PAGES[TARGET_PAGE_KEY];
 
     if (!rawPath && rawPath !== '') fail(`❌ LỖI: Không tìm thấy path cho "${TARGET_PAGE_KEY}"`);
 
+    // =========================================================================
+    // 🛠 LOGIC ĐIỀU HƯỚNG RIÊNG CHO TRANG TRUCTIEP
+    // =========================================================================
+    let currentBaseUrl = finalBaseUrl;
+    let currentHostHeader = hostHeader;
+
+    // Nếu là trang tructiep, ép dùng Domain (https://quehuongtoi.com)
+    if (TARGET_PAGE_KEY === 'tructiep') {
+        currentBaseUrl = CONFIG.BASE_URL || `https://${CONFIG.DOMAIN}`;
+        currentHostHeader = null; // Bỏ Host header vì đã dùng URL Domain chuẩn
+    }
+
     // Chuẩn hóa ghép URL an toàn (tránh bị thừa/thiếu dấu /)
-    const cleanBaseUrl = finalBaseUrl.replace(/\/+$/, '');
+    const cleanBaseUrl = currentBaseUrl.replace(/\/+$/, '');
     const cleanPath = rawPath.startsWith('/') ? rawPath : `/${rawPath}`;
     const finalUrl = `${cleanBaseUrl}${cleanPath}`;
      
     const params = {
         headers: { 
-            // 1. Giả lập User-Agent chuẩn từ ảnh Network Tab (macOS/Chrome 150)
+            // 1. Giả lập User-Agent chuẩn Chrome 150
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
             'Accept-Language': 'vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7',
@@ -108,7 +120,7 @@ export default function () {
             'Pragma': 'no-cache',
             'Connection': 'keep-alive',
 
-            // 2. BỔ SUNG CÁC HEADER AN NINH TRÌNH DUYỆT (Từ ảnh Network Tab)
+            // 2. CÁC HEADER AN NINH TRÌNH DUYỆT
             'Sec-Ch-Ua': '"Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"',
             'Sec-Ch-Ua-Mobile': '?0',
             'Sec-Ch-Ua-Platform': '"macOS"',
@@ -124,10 +136,13 @@ export default function () {
         timeout: '30s',
     };
 
-    if (hostHeader) params.headers['Host'] = hostHeader;
+    // Chỉ gán Host header khi test qua IP (Server mode)
+    if (currentHostHeader) {
+        params.headers['Host'] = currentHostHeader;
+    }
 
     // Log thông tin khi bắt đầu mỗi trang
-    if (execution.scenario.iterationInTest === 0) {
+    if (exec.scenario.iterationInTest === 0) {
         console.log(`\n================================================`);
         console.log(`🎬 CHẾ ĐỘ: ${MAX_VUS <= 10 ? 'SMOKE TEST' : 'LOAD TEST'}`);
         console.log(`🚀 ĐANG TEST: ${TARGET_PAGE_KEY.toUpperCase()} | TARGET: ${MAX_VUS} CCU`);
@@ -146,6 +161,6 @@ export default function () {
     check(res, { 'status is 200': (r) => r.status === 200 });
 
     if (res.status !== 200) {
-        console.error(`[FAIL] Trang: ${TARGET_PAGE_KEY} | Status: ${res.status} | CCU: ${execution.instance.vusActive} | URL: ${finalUrl}`);
+        console.error(`[FAIL] Trang: ${TARGET_PAGE_KEY} | Status: ${res.status} | CCU: ${exec.instance.vusActive} | URL: ${finalUrl}`);
     }
 }
