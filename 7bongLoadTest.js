@@ -98,12 +98,25 @@ export default function () {
      
     const params = {
         headers: { 
-            // Giả lập User-Agent trình duyệt thật để vượt qua WAF Cloudflare
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+            // 1. Giả lập User-Agent chuẩn từ ảnh Network Tab (macOS/Chrome 150)
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
             'Accept-Language': 'vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7',
             'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive' 
+            'Pragma': 'no-cache',
+            'Connection': 'keep-alive',
+
+            // 2. BỔ SUNG CÁC HEADER AN NINH TRÌNH DUYỆT (Từ ảnh Network Tab)
+            'Sec-Ch-Ua': '"Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"',
+            'Sec-Ch-Ua-Mobile': '?0',
+            'Sec-Ch-Ua-Platform': '"macOS"',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'same-origin',
+            
+            // 3. Giả lập Referer & Origin chính chủ
+            'Referer': CONFIG.DOMAIN ? `https://${CONFIG.DOMAIN}/` : 'https://quehuongtoi.com/',
+            'Origin': CONFIG.DOMAIN ? `https://${CONFIG.DOMAIN}` : 'https://quehuongtoi.com',
         },
         tags: { page_name: TARGET_PAGE_KEY },
         timeout: '30s',
