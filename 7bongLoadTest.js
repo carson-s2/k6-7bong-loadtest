@@ -82,6 +82,8 @@ export const options = {
     thresholds: config.thresholds,
     // QUAN TRỌNG: Không tải body về để tránh nghẽn băng thông và tốn RAM máy test
     discardResponseBodies: true,
+    // BỎ QUA KIỂM TRA CHỨNG CHỈ SSL (Sửa lỗi Status: 0 khi chạy HTTPS tới IP)
+    insecureSkipTLSVerify: true,
 };
 
 export default function () {
