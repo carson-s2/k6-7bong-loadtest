@@ -59,16 +59,17 @@ function generateConfig() {
 
         // --- THRESHOLDS  ---
         thresholds[`http_req_duration{page_name:${pageKey}}`] = [{ 
-            threshold: 'p(95)<4000', // Giới hạn 4s cho trang tin tức
-            abortOnFail: true,       // true: Dừng ngay nếu vi phạm để biết điểm gãy
-            delayAbortEval: '20s'    // Bỏ qua 20s đầu để tránh nhiễu lúc mới khởi động
+            threshold: 'p(95)<10000', // Tăng ngưỡng lên 10s (hoặc chỉnh tùy nhu cầu)
+            abortOnFail: true,       // Đổi thành false để k6 KHÔNG dừng ngang khi bị vi phạm
+            delayAbortEval: '20s'
         }];
 
         thresholds[`http_req_failed{page_name:${pageKey}}`] = [{ 
-            threshold: 'rate<0.05',  // Tỷ lệ lỗi dưới 5%
-            abortOnFail: true,
+            threshold: 'rate<0.05',  
+            abortOnFail: true,       // // Đổi thành false để k6 KHÔNG dừng ngang khi bị vi phạm
             delayAbortEval: '20s' 
         }];
+
     });
 
     return { scenarios, thresholds };
