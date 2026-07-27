@@ -9,45 +9,44 @@ const MAX_VUS = __ENV.MAX_VUS ? parseInt(__ENV.MAX_VUS) : CONFIG.MAX_VUS;
 const RUN_MODE = __ENV.ENV;
 
 // 2. TỰ ĐỘNG TÍNH TOÁN THỜI GIAN THEO MỨC TẢI MAX_VUS (ĐƠN VỊ: GIÂY)
-// Nếu có truyền param từ Terminal (RAMP_UP, STAY, RAMP_DOWN, BREAK), K6 sẽ ưu tiên lấy param đó.
 const RAMP_UP_TIME = __ENV.RAMP_UP ? parseInt(__ENV.RAMP_UP) : (() => {
     if (MAX_VUS >= 1000) return 180; // 3 phút tăng tải
     if (MAX_VUS >= 500) return 120; // 2 phút tăng tải
     if (MAX_VUS >= 100) return 60;  // 1 phút tăng tải
-    if (MAX_VUS > 1) return 30;  // 30s tăng tải
-    return 0;                        // Smoke Test
+    if (MAX_VUS > 1) return 30;     // 30s tăng tải
+    return 0;                       // Smoke Test (MAX_VUS = 1)
 })();
 
 const STAY_TIME = __ENV.STAY ? parseInt(__ENV.STAY) : (() => {
     if (MAX_VUS >= 1000) return 600; // 10 phút giữ tải đỉnh
-    if (MAX_VUS >= 500) return 300; // 5 phút giữ tải đỉnh
-    if (MAX_VUS >= 100) return 180; // 3 phút giữ tải đỉnh
-    if (MAX_VUS > 1) return 60;  // 1 phút giữ tải đỉnh
+    if (MAX_VUS >= 500) return 300;  // 5 phút giữ tải đỉnh
+    if (MAX_VUS >= 100) return 180;  // 3 phút giữ tải đỉnh
+    if (MAX_VUS > 1) return 60;      // 1 phút giữ tải đỉnh
     return 20;                       // Smoke Test
 })();
 
 const RAMP_DOWN_TIME = __ENV.RAMP_DOWN ? parseInt(__ENV.RAMP_DOWN) : (() => {
     if (MAX_VUS >= 1000) return 60;  // 1 phút hạ tải
-    if (MAX_VUS >= 500) return 45;  // 45s hạ tải
-    if (MAX_VUS >= 100) return 30;  // 30s hạ tải
-    if (MAX_VUS > 1) return 15;  // 15s hạ tải
+    if (MAX_VUS >= 500) return 45;   // 45s hạ tải
+    if (MAX_VUS >= 100) return 30;   // 30s hạ tải
+    if (MAX_VUS > 1) return 15;      // 15s hạ tải
     return 0;                        // Smoke Test
 })();
 
 const BREAK_TIME = __ENV.BREAK ? parseInt(__ENV.BREAK) : (() => {
     if (MAX_VUS >= 1000) return 60; // 60s nghỉ: Dọn dẹp sạch sẽ Socket/RAM ở tải cực đại
-    if (MAX_VUS >= 500) return 45; // 45s nghỉ: Tải rất cao, cần thời gian xả Connection Pool
-    if (MAX_VUS >= 100) return 30; // 30s nghỉ: Tải trung bình lớn
-    if (MAX_VUS > 1) return 20; // 20s nghỉ: Tải nhỏ đến vừa (Tăng từ 10s -> 20s để tránh dồn tích tụ rác khi chạy 29 trang)
+    if (MAX_VUS >= 500) return 45;  // 45s nghỉ: Tải rất cao, cần thời gian xả Connection Pool
+    if (MAX_VUS >= 100) return 30;  // 30s nghỉ: Tải trung bình lớn
+    if (MAX_VUS > 1) return 20;     // 20s nghỉ: Tải nhỏ đến vừa
     return 5;                       // 5s nghỉ: Smoke Test (<= 1 VU)
 })();
 
 // Tự động điều chỉnh thời gian dọn dẹp (GRACEFUL_STOP) theo mức tải MAX_VUS
 const GRACEFUL_STOP = __ENV.GRACEFUL_STOP ? __ENV.GRACEFUL_STOP : (() => {
-    if (MAX_VUS >= 1000) return '120s'; // Mức tải cực lớn (>= 1000 CCU): Chờ 2 phút để xả hết hàng chờ nghẽn
-    if (MAX_VUS >= 500) return '90s';  // Mức tải cao (>= 500 CCU): Chờ 1.5 phút
-    if (MAX_VUS >= 100) return '60s';  // Mức tải trung bình lớn (>= 100 CCU): Chờ 1 phút
-    if (MAX_VUS > 1) return '30s';  // Load Test nhỏ (11 - 99 CCU): Chờ 30 giây
+    if (MAX_VUS >= 1000) return '120s'; // Mức tải cực lớn (>= 1000 CCU): Chờ 2 phút
+    if (MAX_VUS >= 500) return '90s';   // Mức tải cao (>= 500 CCU): Chờ 1.5 phút
+    if (MAX_VUS >= 100) return '60s';   // Mức tải trung bình lớn (>= 100 CCU): Chờ 1 phút
+    if (MAX_VUS > 1) return '30s';      // Load Test nhỏ (11 - 99 CCU): Chờ 30 giây
     return '10s';                       // Smoke Test (<= 10 CCU): Chờ 10 giây
 })();
 
@@ -57,11 +56,9 @@ const GRACEFUL_STOP = __ENV.GRACEFUL_STOP ? __ENV.GRACEFUL_STOP : (() => {
 const ALL_PAGE_KEYS = Object.keys(CONFIG.PAGES); // Tổng 29 pages
 const TOTAL_AVAILABLE_PAGES = ALL_PAGE_KEYS.length;
 
-// Lấy tham số LIMIT từ terminal (-e LIMIT=... hoặc -e PAGES=...)
 let rawLimit = __ENV.LIMIT || __ENV.PAGES;
 let limitNumber = rawLimit ? parseInt(rawLimit) : TOTAL_AVAILABLE_PAGES;
 
-// Kiểm tra và cảnh báo nếu số truyền vào vượt quá tổng số page có sẵn (29)
 if (limitNumber > TOTAL_AVAILABLE_PAGES) {
     console.warn(`\n⚠️  [CẢNH BÁO]: Bạn truyền LIMIT=${limitNumber}, nhưng tổng số pages hiện tại tối đa chỉ là ${TOTAL_AVAILABLE_PAGES}!`);
     console.warn(`➡️  Tự động điều chỉnh số lượng pages về tối đa: ${TOTAL_AVAILABLE_PAGES} pages.\n`);
@@ -70,7 +67,6 @@ if (limitNumber > TOTAL_AVAILABLE_PAGES) {
     limitNumber = TOTAL_AVAILABLE_PAGES;
 }
 
-// Cắt mảng lấy đúng số lượng page yêu cầu (Ví dụ: truyền 1 lấy 1 page đầu, truyền 2 lấy 2 page đầu)
 const TARGET_PAGE_KEYS = ALL_PAGE_KEYS.slice(0, limitNumber);
 
 let finalBaseUrl = RUN_MODE === 'server' ? CONFIG.SERVER_IP : CONFIG.BASE_URL;
@@ -80,27 +76,26 @@ let hostHeader = RUN_MODE === 'server' ? CONFIG.DOMAIN : null;
 function generateConfig() {
     let scenarios = {};
     let thresholds = {};
-    let totalStartTime = 0; // Biến tích lũy thời gian để chạy tuần tự cho Load Test
+    let totalStartTime = 0; // Biến tích lũy thời gian để chạy tuần tự cho CẢ Smoke Test & Load Test
 
-    // Chỉ duyệt qua danh sách các page đã được giới hạn (TARGET_PAGE_KEYS)
     TARGET_PAGE_KEYS.forEach((pageKey) => {
         const scenarioName = `scenario_${pageKey}`;
 
         if (MAX_VUS <= 1) {
             // =================================================================
-            // CASE 1: SMOKE TEST - Tất cả các trang được chọn chạy CÙNG LÚC tại 0s
+            // CASE 1: SMOKE TEST (MAX_VUS = 1) - CHẠY TUẦN TỰ NỐI TIẾP NHAU
             // =================================================================
             scenarios[scenarioName] = {
                 executor: 'per-vu-iterations',
                 vus: 1,
                 iterations: 1,
-                startTime: '0s',
+                startTime: `${totalStartTime}s`, // 👈 Nối tiếp thời gian (0s, 25s, 50s...) tránh bị nã đồng thời
                 maxDuration: '20s',
                 tags: { page_name: pageKey },
             };
 
             thresholds[`http_req_failed{page_name:${pageKey}}`] = [{
-                threshold: 'rate<=1.0',
+                threshold: 'rate<=0.0', // Smoke Test yêu cầu 100% pass (0% lỗi)
                 abortOnFail: false
             }];
 
@@ -109,9 +104,12 @@ function generateConfig() {
                 abortOnFail: false
             }];
 
+            // Tích lũy thời gian: MaxDuration (20s) + BreakTime (5s) = 25s cho mỗi trang
+            totalStartTime += (20 + BREAK_TIME);
+
         } else {
             // =================================================================
-            // CASE 2: LOAD TEST - Chạy TUẦN TỰ các trang được chọn
+            // CASE 2: LOAD TEST (MAX_VUS > 1) - CHẠY TUẦN TỰ RAMPING VUS
             // =================================================================
             scenarios[scenarioName] = {
                 executor: 'ramping-vus',
@@ -167,7 +165,7 @@ export default function () {
     let currentBaseUrl = finalBaseUrl;
     let currentHostHeader = hostHeader;
 
-    if (TARGET_PAGE_KEY === 'tructiep') {
+    if (TARGET_PAGE_KEY === 'tructiep' && RUN_MODE !== 'server') {
         currentBaseUrl = CONFIG.BASE_URL || `https://${CONFIG.DOMAIN}`;
         currentHostHeader = null;
     }
@@ -224,7 +222,7 @@ export default function () {
 
     // 💤 SLEEP GIÃN NHỊP
     if (MAX_VUS <= 1) {
-        sleep(Math.random() * 5);
+        sleep(Math.random() * 2 + 1);
     } else {
         sleep(Math.random() * 3 + 2);
     }
