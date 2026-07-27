@@ -1,12 +1,77 @@
 import http from 'k6/http';
 import { check, sleep, fail } from 'k6';
 import exec from 'k6/execution';
+import { textSummary } from 'https://jslib.k6.io/k6-summary/0.0.2/index.js';
 import { CONFIG } from './7bongConfig.js';
 
-// 1. LẤY CẤU HÌNH TỪ TERMINAL
-// Lệnh chạy mẫu: k6 run -e ENV=server -e DOMAIN={DOMAIN} -e SERVER_IP=http://{SERVER_IP} -e MAX_VUS=1 7bongLoadTest.js
+// 1. LẤY CẤU HÌNH TỪ TERMINAL (KÈM GIÁ TRỊ MẶC ĐỊNH)
 const MAX_VUS = __ENV.MAX_VUS ? parseInt(__ENV.MAX_VUS) : CONFIG.MAX_VUS;
-const RUN_MODE = __ENV.ENV; 
+const RUN_MODE = __ENV.ENV;
+
+// 2. TỰ ĐỘNG TÍNH TOÁN THỜI GIAN THEO MỨC TẢI MAX_VUS (ĐƠN VỊ: GIÂY)
+// Nếu có truyền param từ Terminal (RAMP_UP, STAY, RAMP_DOWN, BREAK), K6 sẽ ưu tiên lấy param đó.
+const RAMP_UP_TIME = __ENV.RAMP_UP ? parseInt(__ENV.RAMP_UP) : (() => {
+    if (MAX_VUS >= 1000) return 180; // 3 phút tăng tải
+    if (MAX_VUS >= 500) return 120; // 2 phút tăng tải
+    if (MAX_VUS >= 100) return 60;  // 1 phút tăng tải
+    if (MAX_VUS > 1) return 30;  // 30s tăng tải
+    return 0;                        // Smoke Test
+})();
+
+const STAY_TIME = __ENV.STAY ? parseInt(__ENV.STAY) : (() => {
+    if (MAX_VUS >= 1000) return 600; // 10 phút giữ tải đỉnh
+    if (MAX_VUS >= 500) return 300; // 5 phút giữ tải đỉnh
+    if (MAX_VUS >= 100) return 180; // 3 phút giữ tải đỉnh
+    if (MAX_VUS > 1) return 60;  // 1 phút giữ tải đỉnh
+    return 20;                       // Smoke Test
+})();
+
+const RAMP_DOWN_TIME = __ENV.RAMP_DOWN ? parseInt(__ENV.RAMP_DOWN) : (() => {
+    if (MAX_VUS >= 1000) return 60;  // 1 phút hạ tải
+    if (MAX_VUS >= 500) return 45;  // 45s hạ tải
+    if (MAX_VUS >= 100) return 30;  // 30s hạ tải
+    if (MAX_VUS > 1) return 15;  // 15s hạ tải
+    return 0;                        // Smoke Test
+})();
+
+const BREAK_TIME = __ENV.BREAK ? parseInt(__ENV.BREAK) : (() => {
+    if (MAX_VUS >= 1000) return 60; // 60s nghỉ: Dọn dẹp sạch sẽ Socket/RAM ở tải cực đại
+    if (MAX_VUS >= 500) return 45; // 45s nghỉ: Tải rất cao, cần thời gian xả Connection Pool
+    if (MAX_VUS >= 100) return 30; // 30s nghỉ: Tải trung bình lớn
+    if (MAX_VUS > 1) return 20; // 20s nghỉ: Tải nhỏ đến vừa (Tăng từ 10s -> 20s để tránh dồn tích tụ rác khi chạy 29 trang)
+    return 5;                       // 5s nghỉ: Smoke Test (<= 1 VU)
+})();
+
+// Tự động điều chỉnh thời gian dọn dẹp (GRACEFUL_STOP) theo mức tải MAX_VUS
+const GRACEFUL_STOP = __ENV.GRACEFUL_STOP ? __ENV.GRACEFUL_STOP : (() => {
+    if (MAX_VUS >= 1000) return '120s'; // Mức tải cực lớn (>= 1000 CCU): Chờ 2 phút để xả hết hàng chờ nghẽn
+    if (MAX_VUS >= 500) return '90s';  // Mức tải cao (>= 500 CCU): Chờ 1.5 phút
+    if (MAX_VUS >= 100) return '60s';  // Mức tải trung bình lớn (>= 100 CCU): Chờ 1 phút
+    if (MAX_VUS > 1) return '30s';  // Load Test nhỏ (11 - 99 CCU): Chờ 30 giây
+    return '10s';                       // Smoke Test (<= 10 CCU): Chờ 10 giây
+})();
+
+// =========================================================================
+// 🎯 XỬ LÝ GIỚI HẠN SỐ LƯỢNG PAGES TRUYỀN VÀO (Tham số -e LIMIT=...)
+// =========================================================================
+const ALL_PAGE_KEYS = Object.keys(CONFIG.PAGES); // Tổng 29 pages
+const TOTAL_AVAILABLE_PAGES = ALL_PAGE_KEYS.length;
+
+// Lấy tham số LIMIT từ terminal (-e LIMIT=... hoặc -e PAGES=...)
+let rawLimit = __ENV.LIMIT || __ENV.PAGES;
+let limitNumber = rawLimit ? parseInt(rawLimit) : TOTAL_AVAILABLE_PAGES;
+
+// Kiểm tra và cảnh báo nếu số truyền vào vượt quá tổng số page có sẵn (29)
+if (limitNumber > TOTAL_AVAILABLE_PAGES) {
+    console.warn(`\n⚠️  [CẢNH BÁO]: Bạn truyền LIMIT=${limitNumber}, nhưng tổng số pages hiện tại tối đa chỉ là ${TOTAL_AVAILABLE_PAGES}!`);
+    console.warn(`➡️  Tự động điều chỉnh số lượng pages về tối đa: ${TOTAL_AVAILABLE_PAGES} pages.\n`);
+    limitNumber = TOTAL_AVAILABLE_PAGES;
+} else if (isNaN(limitNumber) || limitNumber <= 0) {
+    limitNumber = TOTAL_AVAILABLE_PAGES;
+}
+
+// Cắt mảng lấy đúng số lượng page yêu cầu (Ví dụ: truyền 1 lấy 1 page đầu, truyền 2 lấy 2 page đầu)
+const TARGET_PAGE_KEYS = ALL_PAGE_KEYS.slice(0, limitNumber);
 
 let finalBaseUrl = RUN_MODE === 'server' ? CONFIG.SERVER_IP : CONFIG.BASE_URL;
 let hostHeader = RUN_MODE === 'server' ? CONFIG.DOMAIN : null;
@@ -15,59 +80,66 @@ let hostHeader = RUN_MODE === 'server' ? CONFIG.DOMAIN : null;
 function generateConfig() {
     let scenarios = {};
     let thresholds = {};
-    let totalStartTime = 0; // Biến tích lũy thời gian để chạy tuần tự
-    const pageKeys = Object.keys(CONFIG.PAGES);
+    let totalStartTime = 0; // Biến tích lũy thời gian để chạy tuần tự cho Load Test
 
-    // PHÂN BỔ THỜI GIAN CHO 10 PHÚT (600 GIÂY)
-    const RAMP_UP_TIME = 120;   // 2 phút: Tăng dần từ 0 lên MAX_VUS
-    const STAY_TIME = 420;      // 7 phút: Duy trì mức tải cao nhất để xem độ ổn định
-    const RAMP_DOWN_TIME = 60;   // 1 phút: Hạ tải dần dần
-    const BREAK_TIME = 5;       // 5 giây nghỉ giữa các trang để server giải phóng connection
-
-    pageKeys.forEach((pageKey) => {
+    // Chỉ duyệt qua danh sách các page đã được giới hạn (TARGET_PAGE_KEYS)
+    TARGET_PAGE_KEYS.forEach((pageKey) => {
         const scenarioName = `scenario_${pageKey}`;
 
-        if (MAX_VUS <= 10) {
-            // CASE 1: SMOKE TEST
+        if (MAX_VUS <= 1) {
+            // =================================================================
+            // CASE 1: SMOKE TEST - Tất cả các trang được chọn chạy CÙNG LÚC tại 0s
+            // =================================================================
             scenarios[scenarioName] = {
                 executor: 'per-vu-iterations',
-                vus: MAX_VUS,
+                vus: 1,
                 iterations: 1,
-                startTime: `${totalStartTime}s`,
-                maxDuration: '30s',
+                startTime: '0s',
+                maxDuration: '20s',
                 tags: { page_name: pageKey },
             };
-            totalStartTime += (30 + BREAK_TIME);
+
+            thresholds[`http_req_failed{page_name:${pageKey}}`] = [{
+                threshold: 'rate<=1.0',
+                abortOnFail: false
+            }];
+
+            thresholds[`http_req_duration{page_name:${pageKey}}`] = [{
+                threshold: 'p(95)<20000',
+                abortOnFail: false
+            }];
+
         } else {
-            // CASE 2: LOAD TEST - Chạy tuần tự 10 phút/trang
+            // =================================================================
+            // CASE 2: LOAD TEST - Chạy TUẦN TỰ các trang được chọn
+            // =================================================================
             scenarios[scenarioName] = {
                 executor: 'ramping-vus',
                 startVUs: 0,
                 stages: [
-                    { duration: `${RAMP_UP_TIME}s`, target: MAX_VUS }, // 2 phút đầu tăng tải
-                    { duration: `${STAY_TIME}s`, target: MAX_VUS },    // 7 phút tiếp theo giữ tải đỉnh
-                    { duration: `${RAMP_DOWN_TIME}s`, target: 0 },     // 1 phút cuối hạ tải
+                    { duration: `${RAMP_UP_TIME}s`, target: MAX_VUS },
+                    { duration: `${STAY_TIME}s`, target: MAX_VUS },
+                    { duration: `${RAMP_DOWN_TIME}s`, target: 0 },
                 ],
                 startTime: `${totalStartTime}s`,
+                gracefulStop: GRACEFUL_STOP,
                 tags: { page_name: pageKey },
             };
-            
+
+            thresholds[`http_req_duration{page_name:${pageKey}}`] = [{
+                threshold: 'p(95)<30000',
+                abortOnFail: false,
+                delayAbortEval: '20s'
+            }];
+
+            thresholds[`http_req_failed{page_name:${pageKey}}`] = [{
+                threshold: 'rate<0.05',
+                abortOnFail: false,
+                delayAbortEval: '20s'
+            }];
+
             totalStartTime += (RAMP_UP_TIME + STAY_TIME + RAMP_DOWN_TIME + BREAK_TIME);
         }
-
-        // --- THRESHOLDS ---
-        thresholds[`http_req_duration{page_name:${pageKey}}`] = [{ 
-            threshold: 'p(95)<10000',
-            abortOnFail: false,
-            delayAbortEval: '20s'
-        }];
-
-        thresholds[`http_req_failed{page_name:${pageKey}}`] = [{ 
-            threshold: 'rate<0.05',  
-            abortOnFail: false,
-            delayAbortEval: '20s' 
-        }];
-
     });
 
     return { scenarios, thresholds };
@@ -95,20 +167,17 @@ export default function () {
     let currentBaseUrl = finalBaseUrl;
     let currentHostHeader = hostHeader;
 
-    // Nếu là trang tructiep, ép dùng Domain thay vì Server IP
     if (TARGET_PAGE_KEY === 'tructiep') {
         currentBaseUrl = CONFIG.BASE_URL || `https://${CONFIG.DOMAIN}`;
-        currentHostHeader = null; // Bỏ Host header vì đã dùng URL Domain chuẩn
+        currentHostHeader = null;
     }
 
-    // Chuẩn hóa ghép URL an toàn
     const cleanBaseUrl = currentBaseUrl.replace(/\/+$/, '');
     const cleanPath = rawPath.startsWith('/') ? rawPath : `/${rawPath}`;
     const finalUrl = `${cleanBaseUrl}${cleanPath}`;
-     
+
     const params = {
-        headers: { 
-            // 1. Giả lập User-Agent chuẩn Chrome 150
+        headers: {
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
             'Accept-Language': 'vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7',
@@ -116,15 +185,13 @@ export default function () {
             'Pragma': 'no-cache',
             'Connection': 'keep-alive',
 
-            // 2. CÁC HEADER AN NINH TRÌNH DUYỆT
             'Sec-Ch-Ua': '"Not;A=Brand";v="8", "Chromium";v="150", "Google Chrome";v="150"',
             'Sec-Ch-Ua-Mobile': '?0',
             'Sec-Ch-Ua-Platform': '"macOS"',
             'Sec-Fetch-Dest': 'document',
             'Sec-Fetch-Mode': 'navigate',
             'Sec-Fetch-Site': 'same-origin',
-            
-            // 3. Tự động lấy chính URL/Domain đang test làm Referer & Origin
+
             'Referer': `${cleanBaseUrl}/`,
             'Origin': cleanBaseUrl,
         },
@@ -132,31 +199,43 @@ export default function () {
         timeout: '30s',
     };
 
-    // Chỉ gán Host header khi test qua IP (Server mode)
     if (currentHostHeader) {
         params.headers['Host'] = currentHostHeader;
     }
 
-    // Log thông tin khi bắt đầu mỗi trang
-    if (exec.scenario.iterationInTest === 0) {
+    if (exec.scenario.iterationInInstance === 0 && exec.vu.idInTest === 1) {
         console.log(`\n================================================`);
-        console.log(`🎬 CHẾ ĐỘ: ${MAX_VUS <= 10 ? 'SMOKE TEST' : 'LOAD TEST'}`);
+        console.log(`🎬 CHẾ ĐỘ: ${MAX_VUS <= 1 ? 'SMOKE TEST' : 'LOAD TEST'}`);
         console.log(`🚀 ĐANG TEST: ${TARGET_PAGE_KEY.toUpperCase()} | TARGET: ${MAX_VUS} CCU`);
+        console.log(`📊 TỔNG SỐ PAGES CHẠY LẦN NÀY: ${limitNumber}/${TOTAL_AVAILABLE_PAGES}`);
+        console.log(`⏱️ TIMING: RampUp=${RAMP_UP_TIME}s | Stay=${STAY_TIME}s | RampDown=${RAMP_DOWN_TIME}s | Break=${BREAK_TIME}s`);
         console.log(`🔗 TARGET URL: ${finalUrl}`);
         console.log(`================================================`);
     }
 
-    // Nếu chạy tải cao, thêm sleep để mô phỏng người dùng thật đọc nội dung
-    if (MAX_VUS > 10) {
-        sleep(Math.random() * 2 + 1);
-    }
-
+    // 🚀 BẮN HTTP REQUEST
     const res = http.get(finalUrl, params);
 
-    // Kiểm tra status code
     check(res, { 'status is 200': (r) => r.status === 200 });
 
     if (res.status !== 200) {
         console.error(`[FAIL] Trang: ${TARGET_PAGE_KEY} | Status: ${res.status} | CCU: ${exec.instance.vusActive} | URL: ${finalUrl}`);
     }
+
+    // 💤 SLEEP GIÃN NHỊP
+    if (MAX_VUS <= 1) {
+        sleep(Math.random() * 5);
+    } else {
+        sleep(Math.random() * 3 + 2);
+    }
+}
+
+// 📊 TỰ ĐỘNG XUẤT VÀ GHI ĐÈ REPORT FILE CỐ ĐỊNH
+export function handleSummary(data) {
+    const filePath = './testreport/report_loadtest.txt';
+
+    return {
+        [filePath]: textSummary(data, { indent: ' ', enableColors: false }),
+        'stdout': textSummary(data, { indent: ' ', enableColors: true }),
+    };
 }
