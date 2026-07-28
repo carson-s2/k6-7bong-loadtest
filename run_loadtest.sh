@@ -42,11 +42,15 @@ mkdir -p ./testreport
 # FILE LOG TỔNG HỢP
 SUMMARY_FILE="./testreport/00_TOTAL_SUMMARY.txt"
 
+# ⏱️ 1. GHI NHẬN THỜI GIAN BẮT ĐẦU TEST (TIMESTAMP)
+START_TIMESTAMP=$(date +%s)
+START_DATETIME=$(date '+%Y-%m-%d %H:%M:%S')
+
 # Khởi tạo tiêu đề Báo cáo Tổng hợp
 echo "=======================================================================" > "$SUMMARY_FILE"
 echo "📊 BÁO CÁO TỔNG HỢP KẾT QUẢ LOAD TEST K6" >> "$SUMMARY_FILE"
-echo "🎬 Môi trường: $ENV_MODE | Domain: $DOMAIN | Target: $MAX_VUS CCU" >> "$SUMMARY_FILE"
-echo "⏰ Thời gian test: $(date '+%Y-%m-%d %H:%M:%S')" >> "$SUMMARY_FILE"
+echo "🎬 Môi trường  : $ENV_MODE | Domain: $DOMAIN | Target: $MAX_VUS CCU" >> "$SUMMARY_FILE"
+echo "⏰ Bắt đầu test : $START_DATETIME" >> "$SUMMARY_FILE"
 echo "=======================================================================" >> "$SUMMARY_FILE"
 printf "%-30s | %-12s | %-12s | %-12s\n" "PAGE NAME" "CHECKS RATE" "HTTP FAIL" "AVG REQ TIME" >> "$SUMMARY_FILE"
 echo "-----------------------------------------------------------------------" >> "$SUMMARY_FILE"
@@ -56,6 +60,7 @@ CURRENT_INDEX=1
 
 echo "=========================================================="
 echo "🚀 BẮT ĐẦU TEST K6 ($TOTAL_PAGES PAGES)"
+echo "⏰ THỜI GIAN BẮT ĐẦU: $START_DATETIME"
 echo "=========================================================="
 
 for PAGE in "${PAGES[@]}"
@@ -95,8 +100,23 @@ do
     CURRENT_INDEX=$((CURRENT_INDEX+1))
 done
 
+# ⏱️ 2. GHI NHẬN THỜI GIAN KẾT THÚC & TÍNH TỔNG THỜI GIAN CHẠY
+END_TIMESTAMP=$(date +%s)
+END_DATETIME=$(date '+%Y-%m-%d %H:%M:%S')
+
+TOTAL_SECONDS=$((END_TIMESTAMP - START_TIMESTAMP))
+MINUTES=$((TOTAL_SECONDS / 60))
+SECONDS=$((TOTAL_SECONDS % 60))
+
+# 📝 GHI THÔNG TIN TỔNG THỜI GIAN VÀO CUỐI FILE REPORT
+echo "-----------------------------------------------------------------------" >> "$SUMMARY_FILE"
+echo "🏁 Kết thúc test : $END_DATETIME" >> "$SUMMARY_FILE"
+echo "⏱️ TỔNG THỜI GIAN : ${MINUTES} phút ${SECONDS} giây (Tổng ${TOTAL_SECONDS}s)" >> "$SUMMARY_FILE"
+echo "=======================================================================" >> "$SUMMARY_FILE"
+
 echo ""
 echo "=========================================================="
 echo "✅ HOÀN THÀNH TOÀN BỘ BÀI TEST!"
-echo "📄 Đã xuất file Tổng Hợp Kết Quả tại: $SUMMARY_FILE"
+echo "⏱️ TỔNG THỜI GIAN THỰC THI: ${MINUTES} phút ${SECONDS} giây"
+echo "📄 Báo cáo tổng hợp tại: $SUMMARY_FILE"
 echo "=========================================================="
