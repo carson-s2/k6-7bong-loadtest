@@ -69,7 +69,9 @@ do
     echo "▶️ [$CURRENT_INDEX/$TOTAL_PAGES] CHẠY TEST TRANG: $PAGE"
 
     # Chạy K6
-    k6 run -e ENV=$ENV_MODE \
+    # Code mới (Thêm --quiet để không in log chi tiết từng giây của K6)
+    k6 run --quiet \
+           -e ENV=$ENV_MODE \
            -e DOMAIN=$DOMAIN \
            -e SERVER_IP=$SERVER_IP \
            -e MAX_VUS=$MAX_VUS \
