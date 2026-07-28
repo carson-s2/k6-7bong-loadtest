@@ -28,7 +28,7 @@ if [ -n "$SINGLE_PAGE" ]; then
     PAGES=("$SINGLE_PAGE")
 else
     PAGES=(
-        "homepage" "tyle" "tructiep" "nhandinh" "tipthuTongQuan" "tipthuChuyenGia" 
+        "homepage" "tyle" "nhandinh" "tipthuTongQuan" "tipthuChuyenGia" 
         "tipthuTranDau" "tipthuTip" "giaidau" "chitietgiaiTongQuan" "chitietgiaiKetQua" 
         "chitietgiaiBangXepHang" "chitietgiaiCauLacBo" "chitietgiaiCauThu" "trandauTongQuan" 
         "trandauPhanTichSoLieuThongKe" "trandauPhanTichBieuDoThongKe" "trandauTyLeKeo" 
