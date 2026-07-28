@@ -2,19 +2,16 @@
 
 # =========================================================================
 # LẤY THÔNG SỐ TỪ TERMINAL
-# Cú pháp: ./run_loadtest.sh <ENV_MODE> <DOMAIN> <SERVER_IP> [MAX_VUS] [SINGLE_PAGE]
+# Cú pháp: ./run_loadtest.sh <ENV_MODE> <DOMAIN> [SERVER_IP] [MAX_VUS] [SINGLE_PAGE]
 # =========================================================================
 ENV_MODE=${1:-"local"}      # 'local' hoặc 'server'
 DOMAIN=$2                   # Domain
 SERVER_IP=$3                 # Server IP
 MAX_VUS=${4:-2}             # Số CCU
-SINGLE_PAGE=$5              # Trang cụ thể cần test (Ví dụ: tructiep). Để trống = Test ALL
+SINGLE_PAGE=$5              # Trang cụ thể cần test. Để trống = Test ALL
 
-# Kiểm tra thiếu DOMAIN
 if [ -z "$DOMAIN" ]; then
-    echo "=========================================================="
     echo "❌ LỖI: THIẾU THÔNG TIN DOMAIN!"
-    echo "=========================================================="
     exit 1
 fi
 
@@ -26,7 +23,7 @@ elif [ $MAX_VUS -gt 1 ]; then BREAK_TIME=20
 else BREAK_TIME=5
 fi
 
-# NẾU CÓ TRUYỀN SINGLE_PAGE THÌ CHỈ TEST TRANG ĐÓ, NẾU KHÔNG THÌ TEST CẢ 29 TRANG
+# DANH SÁCH PAGES
 if [ -n "$SINGLE_PAGE" ]; then
     PAGES=("$SINGLE_PAGE")
 else
@@ -41,27 +38,32 @@ else
 fi
 
 mkdir -p ./testreport
+
+# FILE LOG TỔNG HỢP
+SUMMARY_FILE="./testreport/00_TOTAL_SUMMARY.txt"
+
+# Khởi tạo tiêu đề Báo cáo Tổng hợp
+echo "=======================================================================" > "$SUMMARY_FILE"
+echo "📊 BÁO CÁO TỔNG HỢP KẾT QUẢ LOAD TEST K6" >> "$SUMMARY_FILE"
+echo "🎬 Môi trường: $ENV_MODE | Domain: $DOMAIN | Target: $MAX_VUS CCU" >> "$SUMMARY_FILE"
+echo "⏰ Thời gian test: $(date '+%Y-%m-%d %H:%M:%S')" >> "$SUMMARY_FILE"
+echo "=======================================================================" >> "$SUMMARY_FILE"
+printf "%-30s | %-12s | %-12s | %-12s\n" "PAGE NAME" "CHECKS RATE" "HTTP FAIL" "AVG REQ TIME" >> "$SUMMARY_FILE"
+echo "-----------------------------------------------------------------------" >> "$SUMMARY_FILE"
+
 TOTAL_PAGES=${#PAGES[@]}
 CURRENT_INDEX=1
 
 echo "=========================================================="
-echo "🚀 BẮT ĐẦU TEST K6"
-echo "🎬 MÔI TRƯỜNG : $ENV_MODE"
-echo "🌐 DOMAIN     : $DOMAIN"
-if [ "$ENV_MODE" == "server" ]; then
-    echo "🖥️ SERVER IP  : $SERVER_IP"
-fi
-echo "👥 TARGET TẢI : $MAX_VUS CCU"
-echo "🎯 TỔNG PAGES : $TOTAL_PAGES page(s)"
+echo "🚀 BẮT ĐẦU TEST K6 ($TOTAL_PAGES PAGES)"
 echo "=========================================================="
 
 for PAGE in "${PAGES[@]}"
 do
     echo ""
-    echo "=========================================================="
     echo "▶️ [$CURRENT_INDEX/$TOTAL_PAGES] CHẠY TEST TRANG: $PAGE"
-    echo "=========================================================="
 
+    # Chạy K6
     k6 run -e ENV=$ENV_MODE \
            -e DOMAIN=$DOMAIN \
            -e SERVER_IP=$SERVER_IP \
@@ -69,10 +71,24 @@ do
            -e TARGET_PAGE=$PAGE \
            7bongLoadTest.js
 
-    # Nếu chạy nhiều trang thì mới nghỉ xả RAM, nếu test 1 trang thì bỏ qua sleep
+    # TỰ ĐỘNG ĐỌC KẾT QUẢ TỪ REPORT RIÊNG VÀ BỔ SUNG VÀO FILE TỔNG HỢP
+    REPORT_FILE="./testreport/report_${PAGE}.txt"
+    if [ -f "$REPORT_FILE" ]; then
+        CHECKS=$(grep "checks" "$REPORT_FILE" | awk '{print $2}' | head -n 1)
+        FAIL_RATE=$(grep "http_req_failed" "$REPORT_FILE" | awk '{print $2}' | head -n 1)
+        AVG_TIME=$(grep "http_req_duration" "$REPORT_FILE" | grep "avg=" | awk -F'avg=' '{print $2}' | awk '{print $1}')
+        
+        [ -z "$CHECKS" ] && CHECKS="ABORTED/FAIL"
+        [ -z "$FAIL_RATE" ] && FAIL_RATE="100.00%"
+        [ -z "$AVG_TIME" ] && AVG_TIME="N/A"
+
+        printf "%-30s | %-12s | %-12s | %-12s\n" "$PAGE" "$CHECKS" "$FAIL_RATE" "$AVG_TIME" >> "$SUMMARY_FILE"
+    else
+        printf "%-30s | %-12s | %-12s | %-12s\n" "$PAGE" "NO REPORT" "100.00%" "N/A" >> "$SUMMARY_FILE"
+    fi
+
     if [ $TOTAL_PAGES -gt 1 ]; then
-        echo ""
-        echo "💤 Nghỉ $BREAK_TIME giây xả bộ nhớ RAM & Connection Pool..."
+        echo "💤 Nghỉ $BREAK_TIME giây..."
         sleep $BREAK_TIME
     fi
 
@@ -81,5 +97,6 @@ done
 
 echo ""
 echo "=========================================================="
-echo "✅ HOÀN THÀNH!"
+echo "✅ HOÀN THÀNH TOÀN BỘ BÀI TEST!"
+echo "📄 Đã xuất file Tổng Hợp Kết Quả tại: $SUMMARY_FILE"
 echo "=========================================================="
