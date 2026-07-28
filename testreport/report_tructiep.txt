@@ -1,21 +1,21 @@
      ✓ status is 200
 
-     checks.........................: 100.00% ✓ 11       ✗ 0  
-     data_received..................: 4.6 MB  99 kB/s
-     data_sent......................: 29 kB   623 B/s
-     http_req_blocked...............: avg=144.94ms min=0s       med=2µs      max=963.08ms p(90)=631.32ms p(95)=797.2ms 
-     http_req_connecting............: avg=57.4ms   min=0s       med=0s       max=315.98ms p(90)=315.41ms p(95)=315.7ms 
-     http_req_duration..............: avg=828.26ms min=518.42ms med=586.69ms max=1.64s    p(90)=1.61s    p(95)=1.63s   
-       { expected_response:true }...: avg=828.26ms min=518.42ms med=586.69ms max=1.64s    p(90)=1.61s    p(95)=1.63s   
-     ✓ { page_name:tructiep }.......: avg=828.26ms min=518.42ms med=586.69ms max=1.64s    p(90)=1.61s    p(95)=1.63s   
-     http_req_failed................: 0.00%   ✓ 0        ✗ 11 
-     ✓ { page_name:tructiep }.......: 0.00%   ✓ 0        ✗ 11 
-     http_req_receiving.............: avg=411.49ms min=161.31ms med=220.02ms max=1.12s    p(90)=1.05s    p(95)=1.08s   
-     http_req_sending...............: avg=397.63µs min=97µs     med=236µs    max=1.63ms   p(90)=698µs    p(95)=1.16ms  
-     http_req_tls_handshaking.......: avg=57.03ms  min=0s       med=0s       max=314.63ms p(90)=312.79ms p(95)=313.71ms
-     http_req_waiting...............: avg=416.36ms min=350.05ms med=404.61ms max=563.94ms p(90)=523.36ms p(95)=543.65ms
-     http_reqs......................: 11      0.2384/s
-     iteration_duration.............: avg=4.5s     min=2.69s    med=4.55s    max=6.8s     p(90)=5.41s    p(95)=6.1s    
-     iterations.....................: 10      0.216728/s
+     checks.........................: 100.00% ✓ 8        ✗ 0  
+     data_received..................: 3.3 MB  82 kB/s
+     data_sent......................: 21 kB   526 B/s
+     http_req_blocked...............: avg=349.86ms min=0s       med=1µs      max=2s       p(90)=1.15s    p(95)=1.58s   
+     http_req_connecting............: avg=224.22ms min=0s       med=0s       max=1.31s    p(90)=730.84ms p(95)=1.02s   
+     http_req_duration..............: avg=930.55ms min=528.2ms  med=883.7ms  max=1.49s    p(90)=1.39s    p(95)=1.44s   
+       { expected_response:true }...: avg=930.55ms min=528.2ms  med=883.7ms  max=1.49s    p(90)=1.39s    p(95)=1.44s   
+     ✓ { page_name:tructiep }.......: avg=930.55ms min=528.2ms  med=883.7ms  max=1.49s    p(90)=1.39s    p(95)=1.44s   
+     http_req_failed................: 0.00%   ✓ 0        ✗ 8  
+     ✓ { page_name:tructiep }.......: 0.00%   ✓ 0        ✗ 8  
+     http_req_receiving.............: avg=493.42ms min=172.21ms med=402.27ms max=980.92ms p(90)=946.9ms  p(95)=963.91ms
+     http_req_sending...............: avg=614.5µs  min=84µs     med=267.5µs  max=2.93ms   p(90)=1.34ms   p(95)=2.14ms  
+     http_req_tls_handshaking.......: avg=77.21ms  min=0s       med=0s       max=309.42ms p(90)=308.62ms p(95)=309.02ms
+     http_req_waiting...............: avg=436.51ms min=347.49ms med=397.82ms max=592.45ms p(90)=539.25ms p(95)=565.85ms
+     http_reqs......................: 8       0.198352/s
+     iteration_duration.............: avg=4.83s    min=2.53s    med=5.22s    max=6.5s     p(90)=6.07s    p(95)=6.29s   
+     iterations.....................: 6       0.148764/s
      vus............................: 2       min=0      max=2
      vus_max........................: 2       min=2      max=2

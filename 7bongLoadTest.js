@@ -104,8 +104,9 @@ export default function () {
     let finalBaseUrl = RUN_MODE === 'server' ? CONFIG.SERVER_IP : CONFIG.BASE_URL;
     let hostHeader = RUN_MODE === 'server' ? CONFIG.DOMAIN : null;
 
-    // Riêng trang tructiep cố định gọi qua Domain thật để tránh lỗi Nginx IP
-    if (TARGET_PAGE_KEY === 'tructiep') {
+    // 🛠️ ĐÃ FIX: Chỉ khi chạy LOCAL mới ép dùng BASE_URL Domain.
+    // Khi chạy trên SERVER_IP thì bắt buộc phải dùng SERVER_IP + Host Header để không bị WAF/Firewall chặn 403.
+    if (TARGET_PAGE_KEY === 'tructiep' && RUN_MODE !== 'server') {
         finalBaseUrl = CONFIG.BASE_URL || (CONFIG.DOMAIN ? `https://${CONFIG.DOMAIN}` : finalBaseUrl);
         hostHeader = null;
     }
