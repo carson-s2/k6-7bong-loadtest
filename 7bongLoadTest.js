@@ -104,7 +104,7 @@ export default function () {
     let finalBaseUrl = RUN_MODE === 'server' ? CONFIG.SERVER_IP : CONFIG.BASE_URL;
     let hostHeader = RUN_MODE === 'server' ? CONFIG.DOMAIN : null;
 
-    // 🛠️ RIÊNG TRANG TRUCTIEP: Bắn qua Domain https
+    // RIÊNG TRANG TRUCTIEP: Bắn qua Domain https
     if (TARGET_PAGE_KEY === 'tructiep') {
         finalBaseUrl = `https://${CONFIG.DOMAIN}`;
         hostHeader = null;
@@ -114,7 +114,7 @@ export default function () {
     const cleanPath = rawPath.startsWith('/') ? rawPath : `/${rawPath}`;
     const finalUrl = `${cleanBaseUrl}${cleanPath}`;
 
-    // 🛠️ BỔ SUNG HEADERS GIẢ LẬP TRÌNH DUYỆT THẬT ĐỂ VƯỢT FIREWALL 403
+    // HEADERS GIẢ LẬP BROWSER
     let customHeaders = {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
@@ -157,10 +157,15 @@ export default function () {
 
     const res = http.get(finalUrl, params);
 
-    check(res, { 'status is 200': (r) => r.status === 200 });
+    const isSuccess = check(res, { 'status is 200': (r) => r.status === 200 });
 
-    if (res.status !== 200) {
-        console.error(`[FAIL] Trang: ${TARGET_PAGE_KEY} | Status: ${res.status} | CCU: ${exec.instance.vusActive} | URL: ${finalUrl}`);
+    // 🛠️ BỔ SUNG LOGIC: NẾU TRẢ VỀ LỖI (ĐẶC BIỆT LÀ 403 HOẶC 404), DỪNG BÀI TEST TRANG NÀY NGAY LẬP TỨC
+    if (!isSuccess) {
+        console.error(`\n❌ [FAIL CRITICAL] Trang: "${TARGET_PAGE_KEY}" bị lỗi Status: ${res.status} | URL: ${finalUrl}`);
+        console.warn(`🛑 Bỏ qua trang này và chuyển sang trang kế tiếp để tiết kiệm thời gian...`);
+        
+        // Dừng ngay lập tức k6 test instance hiện tại
+        exec.test.abort(`Phát hiện lỗi Status ${res.status} trên trang ${TARGET_PAGE_KEY}`);
     }
 
     if (MAX_VUS <= 1) {
