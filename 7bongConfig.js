@@ -1,17 +1,16 @@
-// CHẠY TUẦN TỰ CÁC PAGES
+// CẤU HÌNH TRANG VÀ THÔNG TIN SERVER (100% TRUYỀN TỪ TERMINAL)
 export const CONFIG = {
-    // 1. THÔNG TIN SERVER (Bắt buộc truyền từ Terminal: -e SERVER_IP=... -e DOMAIN=...)
+    // Chỉ nhận giá trị do dòng lệnh truyền qua -e SERVER_IP=... và -e DOMAIN=...
     SERVER_IP: __ENV.SERVER_IP || '', 
     DOMAIN: __ENV.DOMAIN || '',
 
-    // 2. CẤU HÌNH MẶC ĐỊNH
-    // Tự động ghép DOMAIN nếu không truyền BASE_URL riêng (-e BASE_URL=...)
+    // Tự động ghép protocol https với DOMAIN truyền vào
     BASE_URL: __ENV.BASE_URL || (__ENV.DOMAIN ? `https://${__ENV.DOMAIN}` : ''), 
 
-    // Số lượng VUs (Nó sẽ lấy từ -e MAX_VUS=..., nếu không truyền sẽ mặc định là 1)
+    // Số lượng VUs (Lấy từ -e MAX_VUS=..., mặc định là 1)
     MAX_VUS: (__ENV.MAX_VUS && parseInt(__ENV.MAX_VUS)) ? parseInt(__ENV.MAX_VUS) : 1,
 
-    // 3. DANH SÁCH CÁC TRANG (Script sẽ tự động quét hết danh sách này)
+    // Danh sách 29 đường dẫn trang
     PAGES: {
         homepage: '/',
         tyle: '/ty-le-bong-da',
@@ -46,10 +45,5 @@ export const CONFIG = {
         sukien: '/su-kien',
         thang22026: '/su-kien/than-co-dieu-toan-khai-xuan-ruoc-loc-thang-22026', 
         thang52026: '/su-kien/dau-truong-xung-vuong-than-tip-thang-052026', 
-    },
-
-    // 4. LOGIC THỜI GIAN NGHỈ (BREAK TIME)
-    // Có thể tùy chỉnh qua -e BREAK_SMOKE=... hoặc -e BREAK_LOAD=..., mặc định là 5s và 20s
-    BREAK_SMOKE: (__ENV.BREAK_SMOKE && parseInt(__ENV.BREAK_SMOKE)) ? parseInt(__ENV.BREAK_SMOKE) : 5, 
-    BREAK_LOAD: (__ENV.BREAK_LOAD && parseInt(__ENV.BREAK_LOAD)) ? parseInt(__ENV.BREAK_LOAD) : 20, 
+    }
 };
