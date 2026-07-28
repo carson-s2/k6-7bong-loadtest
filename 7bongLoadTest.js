@@ -104,7 +104,7 @@ export default function () {
     let finalBaseUrl = RUN_MODE === 'server' ? CONFIG.SERVER_IP : CONFIG.BASE_URL;
     let hostHeader = RUN_MODE === 'server' ? CONFIG.DOMAIN : null;
 
-    // 🛠️ RIÊNG TRANG TRUCTIEP: Ép gọi thẳng qua Domain https
+    // 🛠️ RIÊNG TRANG TRUCTIEP: Bắn qua Domain https
     if (TARGET_PAGE_KEY === 'tructiep') {
         finalBaseUrl = `https://${CONFIG.DOMAIN}`;
         hostHeader = null;
@@ -114,23 +114,37 @@ export default function () {
     const cleanPath = rawPath.startsWith('/') ? rawPath : `/${rawPath}`;
     const finalUrl = `${cleanBaseUrl}${cleanPath}`;
 
+    // 🛠️ BỔ SUNG HEADERS GIẢ LẬP TRÌNH DUYỆT THẬT ĐỂ VƯỢT FIREWALL 403
+    let customHeaders = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Language': 'vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
+        'Connection': 'keep-alive',
+        'Referer': `${cleanBaseUrl}/`,
+    };
+
+    if (TARGET_PAGE_KEY === 'tructiep') {
+        customHeaders['Sec-Ch-Ua'] = '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"';
+        customHeaders['Sec-Ch-Ua-Mobile'] = '?0';
+        customHeaders['Sec-Ch-Ua-Platform'] = '"macOS"';
+        customHeaders['Sec-Fetch-Dest'] = 'document';
+        customHeaders['Sec-Fetch-Mode'] = 'navigate';
+        customHeaders['Sec-Fetch-Site'] = 'none';
+        customHeaders['Sec-Fetch-User'] = '?1';
+        customHeaders['Upgrade-Insecure-Requests'] = '1';
+    }
+
+    if (hostHeader) {
+        customHeaders['Host'] = hostHeader;
+    }
+
     const params = {
-        headers: {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-            'Accept-Language': 'vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7',
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache',
-            'Connection': 'keep-alive',
-            'Referer': `${cleanBaseUrl}/`,
-        },
+        headers: customHeaders,
         tags: { page_name: TARGET_PAGE_KEY },
         timeout: '30s',
     };
-
-    if (hostHeader) {
-        params.headers['Host'] = hostHeader;
-    }
 
     if (exec.scenario.iterationInInstance === 0 && exec.vu.idInTest === 1) {
         console.log(`\n================================================`);
