@@ -94,7 +94,7 @@ export const options = {
     scenarios: config.scenarios,
     thresholds: config.thresholds,
     discardResponseBodies: true,
-    insecureSkipTLSVerify: true, // Đã có cấu hình bỏ qua xác thực SSL khi bắn qua IP
+    insecureSkipTLSVerify: true,
 };
 
 export default function () {
@@ -104,15 +104,10 @@ export default function () {
     let finalBaseUrl = RUN_MODE === 'server' ? CONFIG.SERVER_IP : CONFIG.BASE_URL;
     let hostHeader = RUN_MODE === 'server' ? CONFIG.DOMAIN : null;
 
-    // 🛠️ TỰ ĐỘNG ÉP SỬ DỤNG HTTPS CHO TRANG TRUCTIEP TRÊN SERVER TEST
+    // 🛠️ RIÊNG TRANG TRUCTIEP: Ép gọi thẳng qua Domain https
     if (TARGET_PAGE_KEY === 'tructiep') {
-        if (RUN_MODE === 'server') {
-            finalBaseUrl = CONFIG.SERVER_IP.replace(/^http:\/\//, 'https://');
-            hostHeader = CONFIG.DOMAIN;
-        } else {
-            finalBaseUrl = CONFIG.BASE_URL || (CONFIG.DOMAIN ? `https://${CONFIG.DOMAIN}` : finalBaseUrl);
-            hostHeader = null;
-        }
+        finalBaseUrl = `https://${CONFIG.DOMAIN}`;
+        hostHeader = null;
     }
 
     const cleanBaseUrl = finalBaseUrl.replace(/\/+$/, '');
