@@ -89,13 +89,13 @@ function generateConfig() {
                 executor: 'per-vu-iterations',
                 vus: 1,
                 iterations: 1,
-                startTime: `${totalStartTime}s`, // 👈 Nối tiếp thời gian (0s, 25s, 50s...) tránh bị nã đồng thời
+                startTime: `${totalStartTime}s`,
                 maxDuration: '20s',
                 tags: { page_name: pageKey },
             };
 
             thresholds[`http_req_failed{page_name:${pageKey}}`] = [{
-                threshold: 'rate<=0.0', // Smoke Test yêu cầu 100% pass (0% lỗi)
+                threshold: 'rate<=0.0', // Smoke Test yêu cầu 100% pass
                 abortOnFail: false
             }];
 
@@ -104,7 +104,6 @@ function generateConfig() {
                 abortOnFail: false
             }];
 
-            // Tích lũy thời gian: MaxDuration (20s) + BreakTime (5s) = 25s cho mỗi trang
             totalStartTime += (20 + BREAK_TIME);
 
         } else {
@@ -161,13 +160,14 @@ export default function () {
 
     // =========================================================================
     // 🛠 LOGIC ĐIỀU HƯỚNG RIÊNG CHO TRANG TRUCTIEP
+    // Cố định trang tructiep BẮT BUỘC dùng BASE_URL Domain thật để tránh lỗi 404 Nginx IP
     // =========================================================================
     let currentBaseUrl = finalBaseUrl;
     let currentHostHeader = hostHeader;
 
-    if (TARGET_PAGE_KEY === 'tructiep' && RUN_MODE !== 'server') {
-        currentBaseUrl = CONFIG.BASE_URL || `https://${CONFIG.DOMAIN}`;
-        currentHostHeader = null;
+    if (TARGET_PAGE_KEY === 'tructiep') {
+        currentBaseUrl = CONFIG.BASE_URL || (CONFIG.DOMAIN ? `https://${CONFIG.DOMAIN}` : finalBaseUrl);
+        currentHostHeader = null; // Khi gọi trực tiếp Domain thật thì không truyền Host Header thủ công
     }
 
     const cleanBaseUrl = currentBaseUrl.replace(/\/+$/, '');
