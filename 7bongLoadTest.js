@@ -167,7 +167,7 @@ export default function () {
 
     if (TARGET_PAGE_KEY === 'tructiep') {
         currentBaseUrl = CONFIG.BASE_URL || (CONFIG.DOMAIN ? `https://${CONFIG.DOMAIN}` : finalBaseUrl);
-        currentHostHeader = null; // Khi gọi trực tiếp Domain thật thì không truyền Host Header thủ công
+        currentHostHeader = null; // Khi truc-tiep thì không truyền Host Header thủ công
     }
 
     const cleanBaseUrl = currentBaseUrl.replace(/\/+$/, '');
