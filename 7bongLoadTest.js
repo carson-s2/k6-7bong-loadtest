@@ -94,7 +94,7 @@ export const options = {
     scenarios: config.scenarios,
     thresholds: config.thresholds,
     discardResponseBodies: true,
-    insecureSkipTLSVerify: true,
+    insecureSkipTLSVerify: true, // Đã có cấu hình bỏ qua xác thực SSL khi bắn qua IP
 };
 
 export default function () {
@@ -104,11 +104,15 @@ export default function () {
     let finalBaseUrl = RUN_MODE === 'server' ? CONFIG.SERVER_IP : CONFIG.BASE_URL;
     let hostHeader = RUN_MODE === 'server' ? CONFIG.DOMAIN : null;
 
-    // 🛠️ ĐÃ FIX: Chỉ khi chạy LOCAL mới ép dùng BASE_URL Domain.
-    // Khi chạy trên SERVER_IP thì bắt buộc phải dùng SERVER_IP + Host Header để không bị WAF/Firewall chặn 403.
-    if (TARGET_PAGE_KEY === 'tructiep' && RUN_MODE !== 'server') {
-        finalBaseUrl = CONFIG.BASE_URL || (CONFIG.DOMAIN ? `https://${CONFIG.DOMAIN}` : finalBaseUrl);
-        hostHeader = null;
+    // 🛠️ TỰ ĐỘNG ÉP SỬ DỤNG HTTPS CHO TRANG TRUCTIEP TRÊN SERVER TEST
+    if (TARGET_PAGE_KEY === 'tructiep') {
+        if (RUN_MODE === 'server') {
+            finalBaseUrl = CONFIG.SERVER_IP.replace(/^http:\/\//, 'https://');
+            hostHeader = CONFIG.DOMAIN;
+        } else {
+            finalBaseUrl = CONFIG.BASE_URL || (CONFIG.DOMAIN ? `https://${CONFIG.DOMAIN}` : finalBaseUrl);
+            hostHeader = null;
+        }
     }
 
     const cleanBaseUrl = finalBaseUrl.replace(/\/+$/, '');
