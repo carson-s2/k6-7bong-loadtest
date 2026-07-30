@@ -159,13 +159,14 @@ export default function () {
 
     const isSuccess = check(res, { 'status is 200': (r) => r.status === 200 });
 
-    // 🛠️ BỔ SUNG LOGIC: NẾU TRẢ VỀ LỖI (ĐẶC BIỆT LÀ 403 HOẶC 404), DỪNG BÀI TEST TRANG NÀY NGAY LẬP TỨC
+    // 🛠️ XỬ LÝ LỖI AN TOÀN: Bỏ qua các iteration tiếp theo nếu gặp lỗi để tiết kiệm thời gian,
+    // nhưng KHÔNG gọi exec.test.abort() để k6 vẫn xuất report file bình thường.
     if (!isSuccess) {
-        console.error(`\n❌ [FAIL CRITICAL] Trang: "${TARGET_PAGE_KEY}" bị lỗi Status: ${res.status} | URL: ${finalUrl}`);
-        console.warn(`🛑 Bỏ qua trang này và chuyển sang trang kế tiếp để tiết kiệm thời gian...`);
+        console.error(`❌ [FAIL CRITICAL] Trang: "${TARGET_PAGE_KEY}" bị lỗi Status: ${res.status} | URL: ${finalUrl}`);
         
-        // Dừng ngay lập tức k6 test instance hiện tại
-        exec.test.abort(`Phát hiện lỗi Status ${res.status} trên trang ${TARGET_PAGE_KEY}`);
+        // Nghỉ một khoảng gian ngắn để kết thúc graceful iteration hiện tại
+        sleep(1);
+        return; 
     }
 
     if (MAX_VUS <= 1) {
