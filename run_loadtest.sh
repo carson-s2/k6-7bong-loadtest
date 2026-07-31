@@ -2,13 +2,14 @@
 
 # =========================================================================
 # LẤY THÔNG SỐ TỪ TERMINAL
-# Cú pháp: ./run_loadtest.sh <ENV_MODE> <DOMAIN> [SERVER_IP] [MAX_VUS] [SINGLE_PAGE]
+# Cú pháp: ./run_loadtest.sh <ENV_MODE> <DOMAIN> [SERVER_IP] [MAX_VUS] [SINGLE_OR_MULTI_PAGE]
+# ví dụ: ./run_loadtest.sh local quehuongtoi.com "" 1 "homepage,tyle"
 # =========================================================================
 ENV_MODE=${1:-"local"}      # 'local' hoặc 'server'
 DOMAIN=$2                   # Domain
 SERVER_IP=$3                 # Server IP
 MAX_VUS=${4:-1}             # Số CCU / VUs (Mặc định: 1)
-SINGLE_PAGE=$5              # Trang cụ thể cần test. Để trống = Test ALL
+TARGET_PAGES_INPUT=$5       # Trang cụ thể cần test. Để trống = Test ALL. Hoặc nhập "homepage,tyle"
 
 if [ -z "$DOMAIN" ]; then
     echo "❌ LỖI: THIẾU THÔNG TIN DOMAIN!"
@@ -24,8 +25,9 @@ else BREAK_TIME=5
 fi
 
 # DANH SÁCH PAGES
-if [ -n "$SINGLE_PAGE" ]; then
-    PAGES=("$SINGLE_PAGE")
+if [ -n "$TARGET_PAGES_INPUT" ]; then
+    # Chuyển chuỗi phân tách bởi dấu phẩy (vd: homepage,tyle) thành mảng trong bash
+    IFS=',' read -r -a PAGES <<< "$TARGET_PAGES_INPUT"
 else
     PAGES=(
         "homepage" "tyle" "nhandinh" "tipthuTongQuan" "tipthuChuyenGia" 
@@ -40,8 +42,8 @@ fi
 mkdir -p ./testreport
 
 # TÊN FILE LOG TỔNG HỢP (XỬ LÝ TÊN THEO THAM SỐ ĐẦU VÀO)
-if [ -n "$SINGLE_PAGE" ]; then
-    SUMMARY_FILE="./testreport/report_${SINGLE_PAGE}_${MAX_VUS}.txt"
+if [ -n "$TARGET_PAGES_INPUT" ]; then
+    SUMMARY_FILE="./testreport/report_${TARGET_PAGES_INPUT}_${MAX_VUS}.txt"
 else
     SUMMARY_FILE="./testreport/00_TOTAL_SUMMARY_${MAX_VUS}.txt"
 fi
@@ -69,6 +71,9 @@ echo "=========================================================="
 
 for PAGE in "${PAGES[@]}"
 do
+    # Xóa khoảng trắng thừa nếu người dùng lỡ gõ "homepage, tyle"
+    PAGE=$(echo "$PAGE" | xargs)
+
     echo ""
     echo "▶️ [$CURRENT_INDEX/$TOTAL_PAGES] CHẠY TEST TRANG: $PAGE"
 
@@ -97,7 +102,7 @@ do
         printf "%-30s | %-12s | %-12s | %-12s\n" "$PAGE" "NO REPORT" "100.00%" "N/A" >> "$SUMMARY_FILE"
     fi
 
-    if [ $TOTAL_PAGES -gt 1 ]; then
+    if [ $TOTAL_PAGES -gt 1 ] && [ $CURRENT_INDEX -lt $TOTAL_PAGES ]; then
         echo "💤 Nghỉ $BREAK_TIME giây..."
         sleep $BREAK_TIME
     fi
