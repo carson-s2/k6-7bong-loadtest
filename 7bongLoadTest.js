@@ -159,12 +159,8 @@ export default function () {
 
     const isSuccess = check(res, { 'status is 200': (r) => r.status === 200 });
 
-    // 🛠️ XỬ LÝ LỖI AN TOÀN: Bỏ qua các iteration tiếp theo nếu gặp lỗi để tiết kiệm thời gian,
-    // nhưng KHÔNG gọi exec.test.abort() để k6 vẫn xuất report file bình thường.
     if (!isSuccess) {
         console.error(`❌ [FAIL CRITICAL] Trang: "${TARGET_PAGE_KEY}" bị lỗi Status: ${res.status} | URL: ${finalUrl}`);
-        
-        // Nghỉ một khoảng gian ngắn để kết thúc graceful iteration hiện tại
         sleep(1);
         return; 
     }
@@ -178,7 +174,8 @@ export default function () {
 
 export function handleSummary(data) {
     const folderPath = './testreport';
-    const filePath = `${folderPath}/report_${TARGET_PAGE_KEY}.txt`;
+    // Đã sửa lại tên file để tự động ghép thêm số MAX_VUS vào cuối
+    const filePath = `${folderPath}/report_${TARGET_PAGE_KEY}_${MAX_VUS}.txt`;
 
     return {
         [filePath]: textSummary(data, { indent: ' ', enableColors: false }),

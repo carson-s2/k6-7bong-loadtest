@@ -1,0 +1,21 @@
+     ✓ status is 200
+
+     checks..............................: 100.00% ✓ 1        ✗ 0  
+     data_received.......................: 432 kB  137 kB/s
+     data_sent...........................: 3.3 kB  1.0 kB/s
+     http_req_blocked....................: avg=860.75ms min=860.75ms med=860.75ms max=860.75ms p(90)=860.75ms p(95)=860.75ms
+     http_req_connecting.................: avg=218.36ms min=218.36ms med=218.36ms max=218.36ms p(90)=218.36ms p(95)=218.36ms
+     http_req_duration...................: avg=1.13s    min=1.13s    med=1.13s    max=1.13s    p(90)=1.13s    p(95)=1.13s   
+       { expected_response:true }........: avg=1.13s    min=1.13s    med=1.13s    max=1.13s    p(90)=1.13s    p(95)=1.13s   
+     ✓ { page_name:chitietgiaiKetQua }...: avg=1.13s    min=1.13s    med=1.13s    max=1.13s    p(90)=1.13s    p(95)=1.13s   
+     http_req_failed.....................: 0.00%   ✓ 0        ✗ 1  
+     ✓ { page_name:chitietgiaiKetQua }...: 0.00%   ✓ 0        ✗ 1  
+     http_req_receiving..................: avg=707.93ms min=707.93ms med=707.93ms max=707.93ms p(90)=707.93ms p(95)=707.93ms
+     http_req_sending....................: avg=455µs    min=455µs    med=455µs    max=455µs    p(90)=455µs    p(95)=455µs   
+     http_req_tls_handshaking............: avg=224.6ms  min=224.6ms  med=224.6ms  max=224.6ms  p(90)=224.6ms  p(95)=224.6ms 
+     http_req_waiting....................: avg=426.19ms min=426.19ms med=426.19ms max=426.19ms p(90)=426.19ms p(95)=426.19ms
+     http_reqs...........................: 1       0.316884/s
+     iteration_duration..................: avg=3.15s    min=3.15s    med=3.15s    max=3.15s    p(90)=3.15s    p(95)=3.15s   
+     iterations..........................: 1       0.316884/s
+     vus.................................: 1       min=1      max=1
+     vus_max.............................: 1       min=1      max=1

@@ -1,0 +1,21 @@
+     ✓ status is 200
+
+     checks.........................: 100.00% ✓ 1        ✗ 0  
+     data_received..................: 712 kB  140 kB/s
+     data_sent......................: 4.9 kB  965 B/s
+     http_req_blocked...............: avg=446.61ms min=446.61ms med=446.61ms max=446.61ms p(90)=446.61ms p(95)=446.61ms
+     http_req_connecting............: avg=218.84ms min=218.84ms med=218.84ms max=218.84ms p(90)=218.84ms p(95)=218.84ms
+     http_req_duration..............: avg=2.27s    min=2.27s    med=2.27s    max=2.27s    p(90)=2.27s    p(95)=2.27s   
+       { expected_response:true }...: avg=2.27s    min=2.27s    med=2.27s    max=2.27s    p(90)=2.27s    p(95)=2.27s   
+     ✓ { page_name:sukien }.........: avg=2.27s    min=2.27s    med=2.27s    max=2.27s    p(90)=2.27s    p(95)=2.27s   
+     http_req_failed................: 0.00%   ✓ 0        ✗ 1  
+     ✓ { page_name:sukien }.........: 0.00%   ✓ 0        ✗ 1  
+     http_req_receiving.............: avg=966.88ms min=966.88ms med=966.88ms max=966.88ms p(90)=966.88ms p(95)=966.88ms
+     http_req_sending...............: avg=614µs    min=614µs    med=614µs    max=614µs    p(90)=614µs    p(95)=614µs   
+     http_req_tls_handshaking.......: avg=225.08ms min=225.08ms med=225.08ms max=225.08ms p(90)=225.08ms p(95)=225.08ms
+     http_req_waiting...............: avg=1.3s     min=1.3s     med=1.3s     max=1.3s     p(90)=1.3s     p(95)=1.3s    
+     http_reqs......................: 1       0.196187/s
+     iteration_duration.............: avg=5.09s    min=5.09s    med=5.09s    max=5.09s    p(90)=5.09s    p(95)=5.09s   
+     iterations.....................: 1       0.196187/s
+     vus............................: 1       min=1      max=1
+     vus_max........................: 1       min=1      max=1

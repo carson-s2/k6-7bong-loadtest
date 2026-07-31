@@ -1,21 +1,21 @@
      ✓ status is 200
 
-     checks.........................: 100.00% ✓ 33       ✗ 0  
-     data_received..................: 20 MB   186 kB/s
-     data_sent......................: 118 kB  1.1 kB/s
-     http_req_blocked...............: avg=38.1ms   min=0s       med=2µs      max=631.28ms p(90)=3µs     p(95)=250.51ms
-     http_req_connecting............: avg=18.72ms  min=0s       med=0s       max=310.1ms  p(90)=0s      p(95)=123.16ms
-     http_req_duration..............: avg=1.62s    min=509.82ms med=1.53s    max=4.19s    p(90)=2.89s   p(95)=3.33s   
-       { expected_response:true }...: avg=1.62s    min=509.82ms med=1.53s    max=4.19s    p(90)=2.89s   p(95)=3.33s   
-     ✓ { page_name:nhandinh }.......: avg=1.62s    min=509.82ms med=1.53s    max=4.19s    p(90)=2.89s   p(95)=3.33s   
-     http_req_failed................: 0.00%   ✓ 0        ✗ 33 
-     ✓ { page_name:nhandinh }.......: 0.00%   ✓ 0        ✗ 33 
-     http_req_receiving.............: avg=1.23s    min=151.2ms  med=1.11s    max=3.75s    p(90)=2.5s    p(95)=2.94s   
-     http_req_sending...............: avg=269.15µs min=81µs     med=237µs    max=1.4ms    p(90)=327.4µs p(95)=556.19µs
-     http_req_tls_handshaking.......: avg=19.15ms  min=0s       med=0s       max=317.73ms p(90)=0s      p(95)=125.76ms
-     http_req_waiting...............: avg=391.04ms min=350.93ms med=367.08ms max=499.18ms p(90)=449.8ms p(95)=478.76ms
-     http_reqs......................: 33      0.311321/s
-     iteration_duration.............: avg=4.94s    min=2.93s    med=4.72s    max=7.93s    p(90)=6.88s   p(95)=7.3s    
-     iterations.....................: 33      0.311321/s
-     vus............................: 1       min=0      max=2
-     vus_max........................: 2       min=2      max=2
+     checks.........................: 100.00% ✓ 1        ✗ 0  
+     data_received..................: 612 kB  119 kB/s
+     data_sent......................: 4.3 kB  834 B/s
+     http_req_blocked...............: avg=444.94ms min=444.94ms med=444.94ms max=444.94ms p(90)=444.94ms p(95)=444.94ms
+     http_req_connecting............: avg=218.53ms min=218.53ms med=218.53ms max=218.53ms p(90)=218.53ms p(95)=218.53ms
+     http_req_duration..............: avg=1.74s    min=1.74s    med=1.74s    max=1.74s    p(90)=1.74s    p(95)=1.74s   
+       { expected_response:true }...: avg=1.74s    min=1.74s    med=1.74s    max=1.74s    p(90)=1.74s    p(95)=1.74s   
+     ✓ { page_name:nhandinh }.......: avg=1.74s    min=1.74s    med=1.74s    max=1.74s    p(90)=1.74s    p(95)=1.74s   
+     http_req_failed................: 0.00%   ✓ 0        ✗ 1  
+     ✓ { page_name:nhandinh }.......: 0.00%   ✓ 0        ✗ 1  
+     http_req_receiving.............: avg=1.2s     min=1.2s     med=1.2s     max=1.2s     p(90)=1.2s     p(95)=1.2s    
+     http_req_sending...............: avg=124µs    min=124µs    med=124µs    max=124µs    p(90)=124µs    p(95)=124µs   
+     http_req_tls_handshaking.......: avg=224.09ms min=224.09ms med=224.09ms max=224.09ms p(90)=224.09ms p(95)=224.09ms
+     http_req_waiting...............: avg=543.94ms min=543.94ms med=543.94ms max=543.94ms p(90)=543.94ms p(95)=543.94ms
+     http_reqs......................: 1       0.193926/s
+     iteration_duration.............: avg=5.15s    min=5.15s    med=5.15s    max=5.15s    p(90)=5.15s    p(95)=5.15s   
+     iterations.....................: 1       0.193926/s
+     vus............................: 1       min=1      max=1
+     vus_max........................: 1       min=1      max=1

@@ -1,6 +1,21 @@
-     http_req_duration................: avg=0s min=0s med=0s max=0s p(90)=0s p(95)=0s
-     ✓ { page_name:tipthuTongQuan }...: avg=0s min=0s med=0s max=0s p(90)=0s p(95)=0s
-     http_req_failed..................: 0.00% ✓ 0   ✗ 0  
-     ✓ { page_name:tipthuTongQuan }...: 0.00% ✓ 0   ✗ 0  
-     vus..............................: 0     min=0 max=0
-     vus_max..........................: 2     min=2 max=2
+     ✓ status is 200
+
+     checks...........................: 100.00% ✓ 1        ✗ 0  
+     data_received....................: 705 kB  228 kB/s
+     data_sent........................: 4.9 kB  1.6 kB/s
+     http_req_blocked.................: avg=446.91ms min=446.91ms med=446.91ms max=446.91ms p(90)=446.91ms p(95)=446.91ms
+     http_req_connecting..............: avg=217.55ms min=217.55ms med=217.55ms max=217.55ms p(90)=217.55ms p(95)=217.55ms
+     http_req_duration................: avg=1.62s    min=1.62s    med=1.62s    max=1.62s    p(90)=1.62s    p(95)=1.62s   
+       { expected_response:true }.....: avg=1.62s    min=1.62s    med=1.62s    max=1.62s    p(90)=1.62s    p(95)=1.62s   
+     ✓ { page_name:tipthuTongQuan }...: avg=1.62s    min=1.62s    med=1.62s    max=1.62s    p(90)=1.62s    p(95)=1.62s   
+     http_req_failed..................: 0.00%   ✓ 0        ✗ 1  
+     ✓ { page_name:tipthuTongQuan }...: 0.00%   ✓ 0        ✗ 1  
+     http_req_receiving...............: avg=880.53ms min=880.53ms med=880.53ms max=880.53ms p(90)=880.53ms p(95)=880.53ms
+     http_req_sending.................: avg=1.57ms   min=1.57ms   med=1.57ms   max=1.57ms   p(90)=1.57ms   p(95)=1.57ms  
+     http_req_tls_handshaking.........: avg=225.24ms min=225.24ms med=225.24ms max=225.24ms p(90)=225.24ms p(95)=225.24ms
+     http_req_waiting.................: avg=741.95ms min=741.95ms med=741.95ms max=741.95ms p(90)=741.95ms p(95)=741.95ms
+     http_reqs........................: 1       0.323325/s
+     iteration_duration...............: avg=3.09s    min=3.09s    med=3.09s    max=3.09s    p(90)=3.09s    p(95)=3.09s   
+     iterations.......................: 1       0.323325/s
+     vus..............................: 1       min=1      max=1
+     vus_max..........................: 1       min=1      max=1

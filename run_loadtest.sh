@@ -7,7 +7,7 @@
 ENV_MODE=${1:-"local"}      # 'local' hoặc 'server'
 DOMAIN=$2                   # Domain
 SERVER_IP=$3                 # Server IP
-MAX_VUS=${4:-2}             # Số CCU
+MAX_VUS=${4:-1}             # Số CCU / VUs (Mặc định: 1)
 SINGLE_PAGE=$5              # Trang cụ thể cần test. Để trống = Test ALL
 
 if [ -z "$DOMAIN" ]; then
@@ -39,8 +39,12 @@ fi
 
 mkdir -p ./testreport
 
-# FILE LOG TỔNG HỢP
-SUMMARY_FILE="./testreport/00_TOTAL_SUMMARY.txt"
+# TÊN FILE LOG TỔNG HỢP (XỬ LÝ TÊN THEO THAM SỐ ĐẦU VÀO)
+if [ -n "$SINGLE_PAGE" ]; then
+    SUMMARY_FILE="./testreport/report_${SINGLE_PAGE}_${MAX_VUS}.txt"
+else
+    SUMMARY_FILE="./testreport/00_TOTAL_SUMMARY_${MAX_VUS}.txt"
+fi
 
 # ⏱️ 1. GHI NHẬN THỜI GIAN BẮT ĐẦU TEST (TIMESTAMP)
 START_TIMESTAMP=$(date +%s)
@@ -69,7 +73,6 @@ do
     echo "▶️ [$CURRENT_INDEX/$TOTAL_PAGES] CHẠY TEST TRANG: $PAGE"
 
     # Chạy K6
-    # Code mới (Thêm --quiet để không in log chi tiết từng giây của K6)
     k6 run --quiet \
            -e ENV=$ENV_MODE \
            -e DOMAIN=$DOMAIN \
@@ -79,7 +82,7 @@ do
            7bongLoadTest.js
 
     # TỰ ĐỘNG ĐỌC KẾT QUẢ TỪ REPORT RIÊNG VÀ BỔ SUNG VÀO FILE TỔNG HỢP
-    REPORT_FILE="./testreport/report_${PAGE}.txt"
+    REPORT_FILE="./testreport/report_${PAGE}_${MAX_VUS}.txt"
     if [ -f "$REPORT_FILE" ]; then
         CHECKS=$(grep "checks" "$REPORT_FILE" | awk '{print $2}' | head -n 1)
         FAIL_RATE=$(grep "http_req_failed" "$REPORT_FILE" | awk '{print $2}' | head -n 1)
